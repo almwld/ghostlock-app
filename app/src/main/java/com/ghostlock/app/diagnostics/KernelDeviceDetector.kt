@@ -2,7 +2,6 @@ package com.ghostlock.app.diagnostics
 
 import android.os.Build
 import android.system.Os
-import java.util.Locale
 
 /**
  * Read-only device/kernel identification for diagnostics.
@@ -72,7 +71,7 @@ object KernelDeviceDetector {
 
     /** Parses only the leading numeric major in a Linux release string. */
     internal fun parseKernelMajor(release: String): Int? {
-        val match = Regex("""^\\s*(\\d+)\\.\\d+(?:\\.|[-+])""").find(release)
+        val match = Regex("""^\s*(\d+)\.\d+(?:\.|[-+])""").find(release)
             ?: return null
         return match.groupValues.getOrNull(1)?.toIntOrNull()
     }
