@@ -31,19 +31,12 @@ object KernelDeviceDetector {
         val explanation: String
     )
 
-    /**
-     * Collects runtime facts using Android APIs and uname(2), without launching
-     * a shell command and without reading or changing exploit/profile state.
-     */
+    /** Collects runtime facts without launching a shell or modifying device state. */
     fun detect(): Report {
         val release = runCatching { Os.uname().release.orEmpty().trim() }
             .getOrElse { System.getProperty("os.version").orEmpty().trim() }
         val major = parseKernelMajor(release)
-        val compatibility = when {
-            release.isBlank() || major == null -> Compatibility.UNKNOWN_KERNEL_RELEASE
-            major != 5 && major != 6 -> Compatibility.UNSUPPORTED_KERNEL_FAMILY
-            else -> Compatibility.PROFILE_MAY_BE_MATCHED
-        }
+        val compatibility = classifyKernelRelease(release)
         val explanation = when (compatibility) {
             Compatibility.UNKNOWN_KERNEL_RELEASE ->
                 "Kernel release could not be reliably read; profile matching must remain disabled."
@@ -67,6 +60,19 @@ object KernelDeviceDetector {
             compatibility = compatibility,
             explanation = explanation
         )
+    }
+
+    /**
+     * Detection is deliberately broader than support: 4.19 is recognized as a
+     * real kernel release but remains unsupported by the current profile path.
+     */
+    internal fun classifyKernelRelease(release: String): Compatibility {
+        val major = parseKernelMajor(release)
+        return when {
+            release.isBlank() || major == null -> Compatibility.UNKNOWN_KERNEL_RELEASE
+            major != 5 && major != 6 -> Compatibility.UNSUPPORTED_KERNEL_FAMILY
+            else -> Compatibility.PROFILE_MAY_BE_MATCHED
+        }
     }
 
     /** Parses only the leading numeric major in a Linux release string. */
