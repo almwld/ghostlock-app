@@ -20,8 +20,8 @@ class KernelDeviceDetectorTest {
 
     @Test
     fun preservesExactReleaseSuffixForDiagnosticAndEditingUse() {
-        val release = "4.19.157-perf+"
-        assertEquals(release, release.trim())
+        val release = KernelDeviceDetector.normalizeKernelRelease(" 4.19.157-perf+ ")
+        assertEquals("4.19.157-perf+", release)
         assertEquals(
             KernelDeviceDetector.Compatibility.RELEASE_DETECTED_UNVALIDATED,
             KernelDeviceDetector.classifyKernelRelease(release)
