@@ -23,6 +23,7 @@ These values and the build fingerprint recorded near the end of this report were
 - The current repository implementation of `isKernelSupported()` returns true only when the full runtime `os.version` string exactly matches a built-in profile name or an imported-profile release. This is a release-name gate, not a vulnerability check; the import validator and profile schema remain separate required checks.
 - No LG Wing / `LM-F100VM` / `4.19.157-perf+` executable profile was found in the branch search performed for this assessment.
 - The LG open-source kernel repository is available at [LG-OSS-Kernels/android_kernel_lge_lmf100vm](https://github.com/LG-OSS-Kernels/android_kernel_lge_lmf100vm). Its branch/source must be compared against the exact installed build before drawing conclusions.
+- The inspected LG source branch's top-level `Makefile` declares `VERSION = 4`, `PATCHLEVEL = 19`, and `SUBLEVEL = 157`, matching the reported `4.19.157` base release. This strengthens the source comparison but still does not prove the installed vendor build came from this exact branch revision.
 
 ## CVE assessment
 
