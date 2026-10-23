@@ -26,7 +26,7 @@ Unit tests cover the diagnostic classification. The detector does not select a p
 
 ## Read/edit access is not execution support
 
-Kernel release identification is informational. A detected 4.19 release should not be hidden or blocked from diagnostic metadata review merely because the current execution schema only documents kernel majors 5 and 6. Profile text and metadata can be reviewed independently; any attempt to resolve or execute a profile remains subject to the existing schema, field, route, and exact-release validation. No guessed values are supplied by this change.
+Kernel release identification is informational. A detected 4.19 release should not be hidden or blocked from diagnostic metadata review merely because the current execution schema only documents kernel majors 5 and 6. `DiagnosticProfileTextStore` provides bounded UTF-8 read/write storage in the app's separate `kernel_diagnostics/` directory (`.txt` documents), with safe names and atomic writes. It does not parse or import those documents as executable profiles and never sends their contents to native code. Any attempt to resolve or execute a profile remains subject to the existing schema, field, route, and exact-release validation. No guessed values are supplied by this change.
 
 ## Why 4.19 execution support is not a profile-only change
 
