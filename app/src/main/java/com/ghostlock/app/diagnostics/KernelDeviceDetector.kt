@@ -12,7 +12,7 @@ import android.system.Os
 object KernelDeviceDetector {
     enum class Compatibility {
         PROFILE_MAY_BE_MATCHED,
-        UNSUPPORTED_KERNEL_FAMILY,
+        RELEASE_DETECTED_UNVALIDATED,
         UNKNOWN_KERNEL_RELEASE
     }
 
@@ -27,6 +27,8 @@ object KernelDeviceDetector {
         val supportedAbis: List<String>,
         val kernelRelease: String,
         val kernelMajor: Int?,
+        /** True when a non-empty release was read; this grants no execution permission. */
+        val canReadOrEditDiagnosticMetadata: Boolean,
         val compatibility: Compatibility,
         val explanation: String
     )
@@ -40,8 +42,8 @@ object KernelDeviceDetector {
         val explanation = when (compatibility) {
             Compatibility.UNKNOWN_KERNEL_RELEASE ->
                 "Kernel release could not be reliably read; profile matching must remain disabled."
-            Compatibility.UNSUPPORTED_KERNEL_FAMILY ->
-                "Kernel family $major is detected, but this detector does not enable or validate a profile for it."
+            Compatibility.RELEASE_DETECTED_UNVALIDATED ->
+                "Kernel release $release was read and preserved, but profile compatibility has not been validated. Diagnostic metadata may be inspected or edited independently."
             Compatibility.PROFILE_MAY_BE_MATCHED ->
                 "Kernel family detected. Exact release/profile validation is still required; this is not a support guarantee."
         }
@@ -57,21 +59,23 @@ object KernelDeviceDetector {
             supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
             kernelRelease = release,
             kernelMajor = major,
+            canReadOrEditDiagnosticMetadata = release.isNotBlank(),
             compatibility = compatibility,
             explanation = explanation
         )
     }
 
     /**
-     * Detection is deliberately broader than support: 4.19 is recognized as a
-     * real kernel release but remains unsupported by the current profile path.
+     * Detection and metadata editing are independent from execution support.
+     * A valid release outside documented profile families is retained as
+     * detected-but-unvalidated, never rejected for read/edit work.
      */
     internal fun classifyKernelRelease(release: String): Compatibility {
         val major = parseKernelMajor(release)
         return when {
             release.isBlank() || major == null -> Compatibility.UNKNOWN_KERNEL_RELEASE
-            major != 5 && major != 6 -> Compatibility.UNSUPPORTED_KERNEL_FAMILY
-            else -> Compatibility.PROFILE_MAY_BE_MATCHED
+            major == 5 || major == 6 -> Compatibility.PROFILE_MAY_BE_MATCHED
+            else -> Compatibility.RELEASE_DETECTED_UNVALIDATED
         }
     }
 
