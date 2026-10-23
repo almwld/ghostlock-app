@@ -66,3 +66,14 @@ Source inspected:
 
 This follow-up is a source-level compatibility finding only. No exploit offsets,
 runtime memory targets, or instructions for privilege escalation are included.
+
+## Previously supplied build identifiers
+
+The user had previously supplied the following diagnostic values in the project history. They are recorded here to avoid asking for the same information again; this connector session did not collect them directly from the handset:
+
+- Build fingerprint: `lge/winglm/winglm:11/RKQ1.210420.001/2215913507061:user/release-keys`
+- Build ID: `RKQ1.210420.001`
+- Reported kernel build date: `2022-06-08`
+- Android security patch level: not present in the retrievable project notes.
+
+These identifiers narrow the search but do not, by themselves, prove which source commit produced the installed kernel. The source/build mapping remains the key unresolved item.
