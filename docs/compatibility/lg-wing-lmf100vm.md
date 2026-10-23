@@ -42,3 +42,27 @@ Authoritative references:
 2. Identify the precise LG source tag/commit corresponding to that build, if published.
 3. Have the vendor source reviewed for whether the upstream fix was backported; if source/build correspondence cannot be established, retain the status as unvalidated.
 4. Keep the device outside execution eligibility until the evidence is independently verified. This report does not include exploit offsets, memory targets, or instructions to obtain root.
+
+## Follow-up source inspection (2026-10-23)
+
+A read-only inspection was performed against the published LG kernel repository branch
+`lmf100vm_android_t_vendor`, file `kernel/locking/rtmutex.c`. In that branch's
+`remove_waiter()`, the implementation still takes `current->pi_lock`, removes
+the waiter from the lock, clears `current->pi_blocked_on`, and passes `current`
+to `rt_mutex_adjust_prio_chain()`. Those are the operations the upstream
+CVE-2026-43499 fix changes to operate on `waiter->task`.
+
+This is evidence that **the inspected public source branch appears to contain the
+pre-fix implementation**. It is not proof that the kernel installed on this phone
+was built from that exact branch revision: the device's full build fingerprint and
+kernel build-to-source mapping still need confirmation, and vendors can backport
+fixes into other revisions. Therefore the installed device remains
+`DETECTED_UNVALIDATED`, not confirmed vulnerable or execution-eligible.
+
+Source inspected:
+- [LG kernel source: kernel/locking/rtmutex.c at lmf100vm_android_t_vendor](https://github.com/LG-OSS-Kernels/android_kernel_lge_lmf100vm/blob/lmf100vm_android_t_vendor/kernel/locking/rtmutex.c)
+- [Upstream CVE record](https://www.cve.org/CVERecord?id=CVE-2026-43499)
+- [Upstream Linux CVE announcement](https://kernel.googlesource.com/pub/scm/linux/security/vulns/+/104f5df494e2b3a98cefcda25ff01cdead552511/cve/published/2026/CVE-2026-43499.mbox)
+
+This follow-up is a source-level compatibility finding only. No exploit offsets,
+runtime memory targets, or instructions for privilege escalation are included.
