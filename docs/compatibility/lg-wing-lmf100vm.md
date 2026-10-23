@@ -79,3 +79,29 @@ The user had previously supplied the following diagnostic values in the project 
 - Android security patch level: not present in the retrievable project notes.
 
 These identifiers narrow the search but do not, by themselves, prove which source commit produced the installed kernel. The source/build mapping remains the key unresolved item.
+
+## Firmware-catalogue cross-check (2026-10-23)
+
+A public third-party firmware catalogue lists a Verizon Android 11 package named
+`F100VM20f_01_VZW_US_OP_0608.kdz` for the LG Wing LM-F100VM family, with a reported
+release date of 2022-06-30 and MD5 `ad6c4e8d201d33cd2809121ca5bca873`. Another public
+firmware index lists the same package/hash under the `LMF100VMY` / `LMF100VMYN`
+variants and gives a push date of 2022-06-28. These dates are consistent with the
+reported V20f / June 2022 generation, but the catalogue is not an LG source-to-build
+manifest.
+
+The handset's previously supplied factory string is
+`LMF100AT-00-V20f-LAO-COM-JUN-08-2022-ARB00+1`, while the catalogue filename identifies
+a Verizon (`VZW_US`) package. The shared `V20f` label and nearby dates are insufficient
+to equate these builds; the region/carrier identifiers differ, and the exact KDZ or
+kernel image hash for the handset has not been established. Therefore this is a
+search lead, not confirmation of the installed image's source revision or patch state.
+
+References:
+- [Public firmware record for F100VM20f_01_VZW_US_OP_0608](https://www.lg-firmwares.com/downloads-file/26955/F100VM20f_01_VZW_US_OP_0608)
+- [Public LG Wing firmware index](https://info.gresslg.tk/?dir=LG+WING)
+
+The profile-schema rule remains unchanged: `kernel_major` is restricted to 5 or 6,
+and a 4.19.157 report cannot be turned into an executable profile by copying a template
+or relaxing validation. Keep this record diagnostic-only unless a supported, defensive
+validation path is independently established.
