@@ -11,10 +11,20 @@ class KernelDeviceDetectorTest {
     }
 
     @Test
-    fun detectsLgWingKernelButKeepsItUnsupported() {
+    fun detectsLgWingKernelWithoutTreatingDetectionAsExecutionSupport() {
         assertEquals(
-            KernelDeviceDetector.Compatibility.UNSUPPORTED_KERNEL_FAMILY,
+            KernelDeviceDetector.Compatibility.RELEASE_DETECTED_UNVALIDATED,
             KernelDeviceDetector.classifyKernelRelease("4.19.157-perf+")
+        )
+    }
+
+    @Test
+    fun preservesExactReleaseSuffixForDiagnosticAndEditingUse() {
+        val release = "4.19.157-perf+"
+        assertEquals(release, release.trim())
+        assertEquals(
+            KernelDeviceDetector.Compatibility.RELEASE_DETECTED_UNVALIDATED,
+            KernelDeviceDetector.classifyKernelRelease(release)
         )
     }
 
