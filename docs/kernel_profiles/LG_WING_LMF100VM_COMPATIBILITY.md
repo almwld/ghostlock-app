@@ -1,6 +1,6 @@
 # LG Wing 5G (LM-F100VM) compatibility status
 
-**Status: device identification added; kernel profile remains unsupported / not validated. Do not run an imported or hand-edited profile on this device.**
+**Status: kernel identification is implemented; profile/execution support for Linux 4.19 remains unsupported and unvalidated.**
 
 ## Device facts recorded for triage
 
@@ -14,30 +14,31 @@
 
 ## Implemented: read-only runtime identification
 
-Added `app/src/main/java/com/ghostlock/app/diagnostics/KernelDeviceDetector.kt`.
+`KernelDeviceDetector.kt` reads Android build identity and ABI data, then obtains the kernel release through `android.system.Os.uname()` (with a JVM OS-version fallback). It parses the major version and classifies the release for diagnostics.
 
-The detector reads Android's runtime build identity and ABI list, then obtains the kernel release through `android.system.Os.uname()` (falling back to the JVM OS version string if unavailable). It parses the leading kernel major and returns a diagnostic status. It does not launch a shell, modify the device, select a profile, or authorize execution.
+The detector intentionally separates **detected** from **supported**:
+- `4.19.157-perf+` is recognized as a valid Linux kernel release with major version 4.
+- Major version 4 remains `UNSUPPORTED_KERNEL_FAMILY` in the current profile path.
+- Major 5 or 6 only means a profile may be matched; exact-release and field validation remain required.
+- An unreadable or malformed release remains `UNKNOWN_KERNEL_RELEASE`.
 
-A unit test covers the reported `4.19.157-perf+` format, representative 5.x/6.x releases, and malformed strings:
-`app/src/test/java/com/ghostlock/app/diagnostics/KernelDeviceDetectorTest.kt`.
+Unit tests cover these cases. The detector does not select a profile, change device state, or authorize execution, and is not yet wired into a user-facing screen.
 
-**Integration note:** this is a diagnostic component; it has not yet been wired into a user-facing screen or the profile-loading/execution flow. Its result is not proof of profile compatibility.
+## Why 4.19 support is not a profile-only change
 
-## Why this is not a profile-only change
+The current profile schema requires `kernel_major` 5 or 6. The configuration controls kernel symbol/address resolution, structure geometry, route selection, credential layout, and other native execution assumptions. Setting `kernel_major = 4`, adding the reported release to the index, or copying a profile from another 4.19 device would not validate those assumptions.
 
-The current profile set and execution assumptions are centered on 5.x and 6.x. Kernel 4.19 is therefore not validated for the current execution path. Changing a schema enum or copying a profile from another 4.19 device would not establish compatibility: vendor kernels can backport individual changes and have device-specific structure layouts, configuration, address mapping, and allocator behavior.
+The LG OSS source tree at [android_kernel_lge_lmf100vm](https://github.com/LG-OSS-Kernels/android_kernel_lge_lmf100vm) reports base version 4.19.157 on branch `lmf100vm_android_t_vendor`. This does not prove its exact source revision/configuration matches the installed firmware.
 
-The LG OSS source tree at [android_kernel_lge_lmf100vm](https://github.com/LG-OSS-Kernels/android_kernel_lge_lmf100vm) reports base version 4.19.157 on branch `lmf100vm_android_t_vendor`. This is useful evidence, but does not prove that its exact source revision and configuration match the installed firmware build.
+The upstream issue [#324](https://github.com/YuKongA/ghostlock-app/issues/324) documents failures on a different vendor 4.19 kernel when routed through a 6.x path, including a hard reset. This is not an LG-specific result, but illustrates why forcing an unsupported kernel through a different family is unsafe.
 
-The upstream issue [#324](https://github.com/YuKongA/ghostlock-app/issues/324) documents failures in a different vendor 4.19 kernel when the app followed the 6.x path, including a hard reset during testing. This is not an LG-specific result, but it demonstrates why a version-number workaround is unsafe.
+## Remaining work before support can be claimed
 
-## Required validation before support can be claimed
+1. Match the installed firmware to an authoritative package and exact kernel source/configuration.
+2. Review the current Kotlin/native code paths and determine whether a separate 4.x implementation is feasible.
+3. Define and test fail-closed validation for any future supported 4.x profile.
+4. Validate any future compatibility implementation on a recoverable test device before marking the model supported.
 
-1. Match the installed firmware fingerprint to an authoritative firmware package and its exact kernel source/configuration.
-2. Have maintainers define and review whether a separate 4.x compatibility design is appropriate.
-3. Add version-specific validation and regression tests that fail closed when kernel family or required metadata is unsupported.
-4. Validate any future compatibility work on a recoverable test device before adding an entry to the supported-device list.
+## Current behavior
 
-## Current behavior and recommendation
-
-No validated LG Wing profile is provided here. Profile generation or successful import must not be interpreted as support. Until the checks above are complete, keep the device classified as unsupported and do not attempt execution with guessed offsets or a profile copied from another model.
+The detector can identify the reported kernel family, but **GhostLock does not have validated execution support for the LG Wing kernel**. No runnable profile is provided by this document. Keep the device unsupported until the implementation and validation work is complete; do not use guessed offsets or a profile copied from another model.
