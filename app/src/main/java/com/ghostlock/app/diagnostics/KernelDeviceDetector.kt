@@ -35,8 +35,8 @@ object KernelDeviceDetector {
 
     /** Collects runtime facts without launching a shell or modifying device state. */
     fun detect(): Report {
-        val release = runCatching { Os.uname().release.orEmpty().trim() }
-            .getOrElse { System.getProperty("os.version").orEmpty().trim() }
+        val release = runCatching { normalizeKernelRelease(Os.uname().release.orEmpty()) }
+            .getOrElse { normalizeKernelRelease(System.getProperty("os.version").orEmpty()) }
         val major = parseKernelMajor(release)
         val compatibility = classifyKernelRelease(release)
         val explanation = when (compatibility) {
@@ -78,6 +78,9 @@ object KernelDeviceDetector {
             else -> Compatibility.RELEASE_DETECTED_UNVALIDATED
         }
     }
+
+    /** Trims surrounding whitespace but preserves the full vendor release suffix. */
+    internal fun normalizeKernelRelease(release: String): String = release.trim()
 
     /** Parses only the leading numeric major in a Linux release string. */
     internal fun parseKernelMajor(release: String): Int? {
