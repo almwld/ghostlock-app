@@ -2,7 +2,6 @@ package com.ghostlock.app.diagnostics
 
 import android.util.AtomicFile
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 
