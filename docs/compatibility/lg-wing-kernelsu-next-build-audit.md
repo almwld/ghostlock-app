@@ -58,9 +58,10 @@ The packaged `kernel.config` included `CONFIG_KSU=y`, `CONFIG_KPROBES=y`, and `C
 ## Newer CI runs and validation changes
 
 - [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191), commit `8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`, remained `in_progress` at the latest check; the kernel/device-tree build step was still running and verification/artifact upload had not started.
-- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683), commit `55e037666dea3d96af3360fd0c8ec1e8153459d6`, ended with conclusion `failure` immediately and the GitHub jobs endpoint returned no jobs. The available metadata does not establish the cause; do not label it a compile failure without runner logs.
-- The workflow was updated in commit `55e037666dea3d96af3360fd0c8ec1e8153459d6` to fail verification when zero DTB/DTBO files are collected and to hash every collected artifact, not just `Image.gz`. This stricter check is intended to prevent a kernel-only output from being reported as a complete device build.
-- No artifact was listed for Run #16 at the latest check, and Run #17 exposed no jobs/artifacts. Neither run currently provides a verified, complete device build.
+- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683), commit `55e037666dea3d96af3360fd0c8ec1e8153459d6`, failed before exposing any job. Inspection of the committed workflow found the verification block had been truncated and duplicated outside the job, so this was a workflow-edit failure, not evidence of a kernel compile failure.
+- Repair commits: `be6a75a273357a8e57eedcfdc4462606d6f8a354` restored the verification block; `e2111b73bdf454009cc30e399dba345262d63ac8` corrected shell escaping in the DTB-count command.
+- [Run #18](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621447969) was cancelled when the shell-escaping correction was pushed. [Run #19](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621470473), commit `e2111b73bdf454009cc30e399dba345262d63ac8`, is pending at the latest check.
+- The corrected workflow now requires at least one collected DTB/DTBO and hashes every collected artifact, not just `Image.gz`. Neither Run #16 nor the corrected run has yet provided a verified, complete device build; inspect the final logs and artifact contents before drawing conclusions.
 
 ## Decision and required follow-up
 
