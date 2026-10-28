@@ -42,6 +42,10 @@ parse as **HOCON**:
   field validation fills `invalidPaths` and blocks
   execution, so a successful generation never means the device is supported.
 
+## Diagnostic metadata versus executable profiles
+
+Kernel release detection and editing a diagnostic note/profile text are not the same as validating a profile for native execution. A release such as `4.19.157-perf+` may be recorded and inspected even though the executable profile schema below still requires `kernel_major` to be 5 or 6. Do not relax that execution validator merely to enable read/edit operations: invalid or unvalidated geometry must remain blocked from execution.
+
 ## 1. Data flow
 
 ```

@@ -39,6 +39,8 @@
     <string name="parse_pick_boot_hint">Pick boot.img first, then xbl_config.img</string>
     <string name="parse_pick_xbl_hint">Pick xbl_config.img</string>
     <string name="parse_pick_payload_hint">Pick payload.bin</string>
+    <string name="kallsyms_path_label">kallsyms / System.map path (optional)</string>
+    <string name="kallsyms_path_summary">Uses this file first; otherwise tries /sdcard/Download/kallsyms.txt automatically. The symbols must match this exact kernel build.</string>
     <string name="parse_pick_uefi_hint">Pick uefi.img</string>
     <string name="parse_pick_vendor_boot_hint">Pick vendor_boot.img</string>
     <string name="parse_success">Offsets parsed</string>

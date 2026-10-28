@@ -1039,6 +1039,9 @@ class GhostlockViewModel(
 
     fun onDialogInputChange(value: String) = mutableState.update { it.copy(dialogInput = value) }
 
+    fun onKallsymsPathChanged(value: String) =
+        mutableState.update { it.copy(kallsymsPath = value) }
+
     fun onDialogConfirm(value: String) {
         val dialogType = state.value.dialogType
         val renameTarget = state.value.userProfileRenameTarget
@@ -1181,7 +1184,21 @@ class GhostlockViewModel(
     private fun stageBoot(uri: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val sourceName = uri.toUri().lastPathSegment?.let(Uri::decode)
+                    .orEmpty().substringAfterLast('/')
+                require(!sourceName.equals("payload.bin", ignoreCase = true)) {
+                    "payload.bin is an OTA payload, not boot.img; choose the payload.bin parser option"
+                }
                 val bootPath = readDocumentUseCase.cache(uri, "boot.img")
+                val signature = java.io.File(bootPath).inputStream().use { stream ->
+                    ByteArray(4).also { stream.read(it) }
+                }
+                if (signature.contentEquals("CrAU".toByteArray(Charsets.US_ASCII))) {
+                    java.io.File(bootPath).delete()
+                    throw IllegalArgumentException(
+                        "Selected file is payload.bin, not boot.img; choose the payload.bin parser option",
+                    )
+                }
                 pendingBootPath = bootPath
                 appendLog("boot.img ready: $bootPath")
                 when {
@@ -1331,18 +1348,20 @@ class GhostlockViewModel(
         xblPath: String? = null,
         uefiPath: String? = null,
         vendorBootPath: String? = null,
+        kallsymsPath: String? = state.value.kallsymsPath.takeIf { it.isNotBlank() },
         overwrite: Boolean = false,
     ) {
         if (!beginOperation()) return
         try {
             when (
                 val result = parseSourceUseCase(
-                    input, xblPath, uefiPath, vendorBootPath, overwrite, ::appendLog,
+                    input, xblPath, uefiPath, vendorBootPath, kallsymsPath, overwrite, ::appendLog,
                 )
             ) {
                 is ParseResult.RequiresOverwrite -> {
-                    pendingConfirmation =
-                        PendingConfirmation.Parse(input, xblPath, uefiPath, vendorBootPath)
+                    pendingConfirmation = PendingConfirmation.Parse(
+                        input, xblPath, uefiPath, vendorBootPath, kallsymsPath,
+                    )
                     showOverwriteDialog(result.releases)
                 }
 
@@ -1436,6 +1455,7 @@ class GhostlockViewModel(
                     confirmation.xblPath,
                     confirmation.uefiPath,
                     confirmation.vendorBootPath,
+                    kallsymsPath = confirmation.kallsymsPath,
                     overwrite = true,
                 )
             }
@@ -1556,6 +1576,7 @@ class GhostlockViewModel(
             val xblPath: String?,
             val uefiPath: String?,
             val vendorBootPath: String? = null,
+            val kallsymsPath: String? = null,
         ) : PendingConfirmation
     }
 }

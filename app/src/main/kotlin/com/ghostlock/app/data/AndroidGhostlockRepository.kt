@@ -308,6 +308,7 @@ class AndroidGhostlockRepository(context: Context) : GhostlockRepository {
         xblPath: String?,
         uefiPath: String?,
         vendorBootPath: String?,
+        kallsymsPath: String?,
         overwrite: Boolean,
         onLog: (String) -> Unit,
     ): ParseResult {
@@ -348,6 +349,14 @@ class AndroidGhostlockRepository(context: Context) : GhostlockRepository {
             parsedFile.delete()
             val args = buildList {
                 add(effectiveInput)
+                val selectedKallsyms = kallsymsPath?.takeIf { it.isNotBlank() }
+                    ?: File("/sdcard/Download/kallsyms.txt")
+                        .takeIf { it.isFile && it.canRead() }
+                        ?.absolutePath
+                if (selectedKallsyms != null) {
+                    add("--kallsyms")
+                    add(selectedKallsyms)
+                }
                 if (effectiveXblPath != null) {
                     add("--xbl-config")
                     add(effectiveXblPath)
