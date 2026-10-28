@@ -181,6 +181,7 @@ private fun GhostlockRoute(
 
             override fun onParseOta() = viewModel.promptParseUrl()
             override fun onParseImage() = viewModel.parseOffsets()
+            override fun onKallsymsPathChanged(value: String) = viewModel.onKallsymsPathChanged(value)
             override fun onCpuPairSelected(index: Int) = viewModel.selectCpuPair(index)
             override fun onSafeModeChanged(enabled: Boolean) = viewModel.toggleSafeMode(enabled)
             override fun onForceAttackTestChanged(enabled: Boolean) =
