@@ -232,19 +232,53 @@ impl BootImage {
         if raw.len() < 44 {
             return Err(ExtractError::new("truncated Android boot header"));
         }
+
         let kernel_size = u32::from_le_bytes(raw[8..12].try_into().unwrap()) as usize;
-        let header_size = u32::from_le_bytes(raw[20..24].try_into().unwrap()) as usize;
         let version = u32::from_le_bytes(raw[40..44].try_into().unwrap());
-        if !(version == 3 || version == 4) {
-            return Err(ExtractError::new(format!(
-                "unsupported boot header version {version}"
-            )));
-        }
-        let start = align(header_size, PAGE_SIZE);
-        let end = start + kernel_size;
-        if end > raw.len() {
+
+        // Legacy boot headers (v0-v2) store page_size at offset 0x24 and the
+        // kernel starts at that page boundary.  The v3/v4 header instead has
+        // header_size at 0x14 and a fixed 4096-byte page alignment.  Reading
+        // offset 0x14 as header_size for v0-v2 actually reads ramdisk_addr,
+        // which mislocates the kernel payload on real legacy boot.img files.
+        let start = match version {
+            0..=2 => {
+                if raw.len() < 40 {
+                    return Err(ExtractError::new("truncated legacy Android boot header"));
+                }
+                let page_size =
+                    u32::from_le_bytes(raw[36..40].try_into().unwrap()) as usize;
+                if !(512..=65536).contains(&page_size) || !page_size.is_power_of_two() {
+                    return Err(ExtractError::new(format!(
+                        "invalid legacy boot page size: {page_size}"
+                    )));
+                }
+                page_size
+            }
+            3 | 4 => {
+                let header_size =
+                    u32::from_le_bytes(raw[20..24].try_into().unwrap()) as usize;
+                if header_size < 44 || header_size > 4096 {
+                    return Err(ExtractError::new(format!(
+                        "invalid boot header size: {header_size}"
+                    )));
+                }
+                align(header_size, PAGE_SIZE)
+            }
+            _ => {
+                return Err(ExtractError::new(format!(
+                    "unsupported boot header version {version}"
+                )));
+            }
+        };
+
+        let end = start
+            .checked_add(kernel_size)
+            .ok_or_else(|| ExtractError::new("kernel payload size overflow"))?;
+        if kernel_size == 0 || end > raw.len() {
             return Err(ExtractError::new("kernel payload exceeds boot image"));
         }
+
         let kernel = &raw[start..end];
         if kernel.len() >= 4 && &kernel[..4] == LZ4_LEGACY_MAGIC {
             let kernel = decompress_lz4_legacy(kernel)?;
