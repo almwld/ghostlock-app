@@ -105,3 +105,13 @@ The profile-schema rule remains unchanged: `kernel_major` is restricted to 5 or 
 and a 4.19.157 report cannot be turned into an executable profile by copying a template
 or relaxing validation. Keep this record diagnostic-only unless a supported, defensive
 validation path is independently established.
+
+
+## KernelSU-Next build audit (2026-10-28)
+
+A separate bilingual evidence record now tracks the local boot-image and CI artifact checks:
+
+- [KernelSU-Next build and boot-image audit](lg-wing-kernelsu-next-build-audit.md)
+- [中文审计记录](lg-wing-kernelsu-next-build-audit_ZH.md)
+
+The recorded kernel, ramdisk, and DTB hashes match the components compared during the local audit. This does **not** validate the full boot image, the recovery DTBO, device-tree provenance, GhostLock execution eligibility, or successful boot. Run #13's artifact omitted standalone DTB/DTBO files and its log reported a missing `arch/arm64/boot/dts/` directory. Run #16 was still in progress when the audit was recorded. Keep the device status `DETECTED_UNVALIDATED` until independent source/build mapping and device validation are complete.
