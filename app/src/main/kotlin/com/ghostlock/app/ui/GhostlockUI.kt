@@ -105,6 +105,8 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 data class GhostlockUiState(
     val deviceName: String = "",
     val kernelRelease: String = "",
+    /** Optional path to a matching System.map/kallsyms dump. */
+    val kallsymsPath: String = "",
     val socName: String = "",
     val kernelSupported: Boolean = false,
     val shizukuEnabled: Boolean = false,
@@ -194,6 +196,7 @@ interface GhostlockActions {
     fun onDocumentsResult(request: DocumentRequest, uris: List<String>)
     fun onParseOta()
     fun onParseImage()
+    fun onKallsymsPathChanged(value: String)
     fun onCpuPairSelected(index: Int)
     fun onSafeModeChanged(enabled: Boolean)
     fun onForceAttackTestChanged(enabled: Boolean)
@@ -906,6 +909,23 @@ private fun ControlPanel(
                 summary = stringResource(R.string.advanced_settings_summary),
                 onClick = actions::onOpenAdvanced,
             )
+        }
+        Card(modifier = modifier.padding(top = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                TextField(
+                    value = state.kallsymsPath,
+                    onValueChange = actions::onKallsymsPathChanged,
+                    label = stringResource(R.string.kallsyms_path_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Text(
+                    text = stringResource(R.string.kallsyms_path_summary),
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                )
+            }
         }
     }
 }
