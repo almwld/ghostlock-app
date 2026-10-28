@@ -207,25 +207,87 @@ pub struct BootImage {
     pub mtk_gzip: bool,
 }
 
+/// Parse an Android boot image only. Raw arm64 Image inputs are handled
+/// separately by BootImage::load so a missing Android magic is diagnosed clearly.
+fn parse_boot_image(raw: Vec<u8>) -> Result<BootImage> {
+    let file_size = raw.len();
+    let magic = raw.get(..8);
+    let header_version = raw.get(40..44).map(|bytes| {
+        u32::from_le_bytes(bytes.try_into().expect("four-byte header version"))
+    });
+    let kernel_size = raw.get(8..12).map(|bytes| {
+        u32::from_le_bytes(bytes.try_into().expect("four-byte kernel size")) as usize
+    });
+    let kernel_offset = match header_version {
+        Some(0..=2) => raw.get(36..40).map(|bytes| {
+            u32::from_le_bytes(bytes.try_into().expect("four-byte page size")) as usize
+        }),
+        Some(3..=4) => raw.get(20..24).map(|bytes| {
+            let header_size = u32::from_le_bytes(
+                bytes.try_into().expect("four-byte header size"),
+            ) as usize;
+            align(header_size, PAGE_SIZE)
+        }),
+        _ => None,
+    };
+    let magic_display = magic
+        .map(|bytes| bytes.iter().map(|byte| format!("{byte:02x}")).collect::<Vec<_>>().join(" "))
+        .unwrap_or_else(|| format!("<truncated: {file_size} bytes>"));
+    eprintln!(
+        "debug: parse_boot_image magic=[{magic_display}] header_version={} kernel_size={} kernel_offset={} file_size={file_size}",
+        header_version.map(|v| v.to_string()).unwrap_or_else(|| "unavailable".to_string()),
+        kernel_size.map(|v| format!("0x{v:x} ({v})")).unwrap_or_else(|| "unavailable".to_string()),
+        kernel_offset.map(|v| format!("0x{v:x} ({v})")).unwrap_or_else(|| "unavailable".to_string()),
+    );
+
+    if magic != Some(ANDROID_MAGIC.as_slice()) {
+        return Err(ExtractError::new(format!(
+            "magic mismatch: expected ANDROID!, got [{magic_display}] (file_size={file_size})"
+        )));
+    }
+    let version = header_version
+        .ok_or_else(|| ExtractError::new("truncated Android boot header: missing header_version"))?;
+    let size = kernel_size
+        .ok_or_else(|| ExtractError::new("truncated Android boot header: missing kernel_size"))?;
+    let offset = kernel_offset
+        .ok_or_else(|| ExtractError::new("truncated Android boot header: missing kernel_offset"))?;
+    if version == 2 {
+        let end = offset.checked_add(size)
+            .ok_or_else(|| ExtractError::new("kernel payload size overflow"))?;
+        if end > file_size {
+            return Err(ExtractError::new(format!(
+                "Android boot v2 kernel bounds invalid: kernel_offset=0x{offset:x} + kernel_size=0x{size:x} exceeds file_size=0x{file_size:x}"
+            )));
+        }
+    }
+    BootImage::from_android_boot(raw)
+}
+
 impl BootImage {
     pub fn load(path: &Path) -> Result<BootImage> {
         let mut raw = std::fs::read(path)?;
+        if path.file_name().and_then(|name| name.to_str())
+            .map_or(false, |name| name.eq_ignore_ascii_case("payload.bin"))
+        {
+            return Err(ExtractError::new(
+                "payload.bin is an Android OTA payload, not boot.img; extract the boot partition first",
+            ));
+        }
         if raw.len() >= 8 && &raw[..8] == ANDROID_MAGIC {
-            return Self::from_android_boot(raw);
+            return parse_boot_image(raw);
         }
         if raw.len() >= 3 && raw[0] == 0x1f && raw[1] == 0x8b && raw[2] == 0x08 {
             raw = gunzip(&raw)?;
         }
-        if raw.len() < 64 || &raw[56..60] != b"ARM\x64" {
-            return Err(ExtractError::new(
-                "input is not an Android boot image or arm64 Image",
-            ));
+        // Raw arm64 Image is handled separately from Android boot-header parsing.
+        if raw.len() >= 64 && &raw[56..60] == b"ARM\x64" {
+            return Ok(BootImage {
+                kernel: raw,
+                mtk_lz4: false,
+                mtk_gzip: false,
+            });
         }
-        Ok(BootImage {
-            kernel: raw,
-            mtk_lz4: false,
-            mtk_gzip: false,
-        })
+        parse_boot_image(raw)
     }
 
     fn from_android_boot(raw: Vec<u8>) -> Result<BootImage> {
