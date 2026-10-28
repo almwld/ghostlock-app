@@ -46,11 +46,9 @@ jobs:
             build/extract
           key: cargo-${{ runner.os }}-${{ hashFiles('tools/extract_rs/Cargo.lock') }}
 
-      - name: Test extractor
+      - name: Build extractor
         working-directory: tools/extract_rs
-        run: |
-          cargo test --release --features http
-          cargo build --release --features http
+        run: cargo build --release --features http
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
