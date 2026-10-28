@@ -58,9 +58,10 @@ DTB 检查工具在 1,212,782 字节的提取组件中识别到 605,249 字节�
 ## 更新的 CI 运行与验证变更
 
 - [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191)，提交 `8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`：最近一次检查时仍为 `in_progress`；内核/设备树构建步骤仍在运行，验证与产物上传尚未开始。
-- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683)，提交 `55e037666dea3d96af3360fd0c8ec1e8153459d6`：很快以 `failure` 结束，GitHub jobs 接口未返回任何 job。现有元数据无法确定原因；没有运行日志时，不应将其直接认定为编译失败。
-- 提交 `55e037666dea3d96af3360fd0c8ec1e8153459d6` 更新了 workflow：若收集到的 DTB/DTBO 数量为零，则验证失败；同时为所有已收集产物生成校验和，而不再只校验 `Image.gz`。此检查旨在避免把只有内核映像的输出误报为完整设备构建。
-- 最近一次检查时，Run #16 尚无产物列表；Run #17 也没有返回 job/产物信息。因此目前两个运行都不能作为已验证的完整设备构建。
+- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683)，提交 `55e037666dea3d96af3360fd0c8ec1e8153459d6`：在尚未显示任何 job 前即失败。检查该提交中的 workflow 后发现，验证区块被截断，且重复内容落在 job 区块之外；这是 workflow 编辑错误，不能视为内核编译失败的证据。
+- 修复提交：`be6a75a273357a8e57eedcfdc4462606d6f8a354` 恢复了完整验证区块；`e2111b73bdf454009cc30e399dba345262d63ac8` 修正了 DTB 计数命令中的 shell 转义。
+- [Run #18](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621447969) 在推送 shell 转义修正后被取消。[Run #19](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621470473)，提交 `e2111b73bdf454009cc30e399dba345262d63ac8`，最近一次检查时处于 pending。
+- 修复后的 workflow 要求至少收集到一个 DTB/DTBO，并为所有收集到的产物生成校验和，而不再只校验 `Image.gz`。Run #16 与修复后的运行目前都尚未提供经验证的完整设备构建；需要检查最终日志与产物内容后才能得出结论。
 
 ## 结论与后续要求
 
