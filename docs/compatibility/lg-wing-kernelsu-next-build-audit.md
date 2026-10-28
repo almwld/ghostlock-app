@@ -55,12 +55,12 @@ The DTB inspection utility identified an FDT structure size of 605,249 bytes wit
 
 The packaged `kernel.config` included `CONFIG_KSU=y`, `CONFIG_KPROBES=y`, and `CONFIG_MODULES=y`, with `CONFIG_KSU_SYSCALL_TABLE_HOOK=y`. Strings such as `kernelsu.allow_shell`, `kernelsu.norc`, and `Tksu_avc` were found in the kernel image. These are useful supporting indicators, but config values and strings alone do not prove runtime activation, correct manager integration, or successful root behavior.
 
-## Newer CI run
+## Newer CI runs and validation changes
 
-- [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191)
-- Commit: `8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`
-- At the time of this audit, the job was still `in_progress`; “Build kernel and device trees” was in progress and verification/artifact upload had not started.
-- Do not treat Run #16 as a completed build until GitHub reports a final conclusion and its artifact contents are inspected.
+- [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191), commit `8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`, remained `in_progress` at the latest check; the kernel/device-tree build step was still running and verification/artifact upload had not started.
+- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683), commit `55e037666dea3d96af3360fd0c8ec1e8153459d6`, ended with conclusion `failure` immediately and the GitHub jobs endpoint returned no jobs. The available metadata does not establish the cause; do not label it a compile failure without runner logs.
+- The workflow was updated in commit `55e037666dea3d96af3360fd0c8ec1e8153459d6` to fail verification when zero DTB/DTBO files are collected and to hash every collected artifact, not just `Image.gz`. This stricter check is intended to prevent a kernel-only output from being reported as a complete device build.
+- No artifact was listed for Run #16 at the latest check, and Run #17 exposed no jobs/artifacts. Neither run currently provides a verified, complete device build.
 
 ## Decision and required follow-up
 
