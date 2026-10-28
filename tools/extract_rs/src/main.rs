@@ -134,63 +134,57 @@ fn download_progress() -> Option<payload_extract::input::ProgressCallback> {
     }))
 }
 
-/// Returns the file-based kallsyms source (--kallsyms or a readable
-/// /proc/kallsyms), or None when the caller should recover symbols from the
-/// kernel image instead.
-fn obtain_kallsyms(provided: Option<&Path>) -> Result<Option<PathBuf>> {
-    if let Some(provided) = provided {
-        if !provided.is_file() {
-            return Err(ExtractError::new(format!(
-                "kallsyms file not found: {}",
-                provided.display()
-            )));
-        }
-        return Ok(Some(provided.to_path_buf()));
-    }
-    // On a rooted phone /proc/kallsyms is the natural source.
-    // procfs stat reports len 0 for it, so probe readability with File::open.
-    let proc_ksyms = Path::new("/proc/kallsyms");
-    if proc_ksyms.is_file() && std::fs::File::open(proc_ksyms).is_ok() {
-        return Ok(Some(proc_ksyms.to_path_buf()));
-    }
-    Ok(None)
-}
-
 /// Read and parse a kallsyms text file.
 fn parse_kallsyms_file(path: &Path) -> Result<Kallsyms> {
     let parsed = std::fs::read_to_string(path)
-        .map_err(|err| ExtractError::new(format!("cannot read kallsyms: {err}")))?;
-    kallsyms::parse(&parsed)
+        .map_err(|err| ExtractError::kallsyms(format!("cannot read kallsyms {}: {err}", path.display())))?;
+    kallsyms::parse(&parsed).map_err(|err| {
+        ExtractError::kallsyms(format!("invalid kallsyms file {}: {err}", path.display()))
+    })
 }
 
-/// Resolve the symbol table: --kallsyms / /proc/kallsyms first, otherwise
-/// recover the embedded kallsyms table from the kernel image (no root needed).
+/// Resolve symbols in priority order: explicit --kallsyms, the Android
+/// Download fallback, readable /proc/kallsyms, then the embedded kernel table.
 fn resolve_kallsyms(
     boot: &BootImage,
     btf_at: Option<(usize, usize)>,
     cli: &Cli,
 ) -> Result<Kallsyms> {
-    if let Some(path) = obtain_kallsyms(cli.kallsyms.as_deref())? {
-        if cli.kallsyms.is_some() {
-            // an explicit --kallsyms fails loudly instead of falling back
-            return parse_kallsyms_file(&path);
+    if let Some(path) = cli.kallsyms.as_deref() {
+        if !path.is_file() {
+            return Err(ExtractError::kallsyms(format!(
+                "kallsyms file not found: {}. Choose a readable file with --kallsyms <path>.",
+                path.display()
+            )));
         }
-        // kptr_restrict zeroes every address; treat that as a missing table
-        if let Ok(ks) = parse_kallsyms_file(&path) {
-            if ks
-                .symbols
-                .values()
-                .any(|addrs| addrs.iter().any(|&a| a != 0))
-            {
-                return Ok(ks);
+        return parse_kallsyms_file(path);
+    }
+
+    for path in [
+        Path::new("/sdcard/Download/kallsyms.txt"),
+        Path::new("/proc/kallsyms"),
+    ] {
+        if !path.is_file() || std::fs::File::open(path).is_err() {
+            continue;
+        }
+        match parse_kallsyms_file(path) {
+            Ok(symbols) if symbols.symbols.values().any(|values| values.iter().any(|&a| a != 0)) => {
+                eprintln!("info: using kallsyms source {}", path.display());
+                return Ok(symbols);
             }
+            Ok(_) => eprintln!("warning: kallsyms source {} contains no non-zero addresses", path.display()),
+            Err(err) => eprintln!("warning: ignoring kallsyms source {}: {err}", path.display()),
         }
     }
-    kallsyms_finder::recover(&boot.kernel, btf_at).map_err(|err| {
-        ExtractError::kallsyms(format!(
-            "{err}. Embedded kallsyms recovery did not validate this kernel image. If you have a matching System.map or kallsyms text dump, retry with --kallsyms <path>. The symbol file must belong to this exact kernel build."
-        ))
-    })
+
+    match kallsyms_finder::recover(&boot.kernel, btf_at) {
+        Ok(symbols) => Ok(symbols),
+        Err(err) => Err(ExtractError::kallsyms(format!(
+            "kallsyms recovery failed: {err}. No usable external symbol table was found. \
+             Place a matching System.map/kallsyms dump at /sdcard/Download/kallsyms.txt, \
+             or pass --kallsyms <path>. The symbol file must match this exact kernel build."
+        ))),
+    }
 }
 
 fn run(cli: &Cli) -> Result<i32> {
