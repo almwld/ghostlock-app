@@ -29,7 +29,7 @@ use ghostlock_extract::vendor_boot::recover_kernel_phys_from_vendor_boot;
 #[command(
     name = "ghostlock-extract",
     about = "Extract GhostLock kernel offsets from boot.img / arm64 Image / payload.bin / OTA URL",
-    after_help = "examples:\n  ghostlock-extract boot.img --format conf --out profile.conf\n  ghostlock-extract boot.img --format json --out offsets.json\n  ghostlock-extract https://host/payload.bin --format json --out offsets.json\nWhen --kallsyms is omitted, the embedded kallsyms table is recovered from the kernel image itself (no root needed); on a rooted phone /proc/kallsyms is used first."
+    after_help = "examples:\n  ghostlock-extract boot.img --format conf --out profile.conf\n  ghostlock-extract boot.img --format json --out offsets.json\n  ghostlock-extract https://host/payload.bin --format json --out offsets.json\nWhen --kallsyms is omitted, tries /sdcard/Download/kallsyms.txt, then readable /proc/kallsyms, then embedded kernel kallsyms."
 )]
 struct Cli {
     /// boot.img, raw arm64 Image, gzip Image, payload.bin, OTA ZIP, or http(s) OTA URL
