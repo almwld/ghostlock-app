@@ -6,7 +6,7 @@ GhostLock uses CVE-2026-43499 to gain temporary root on supported Android kernel
 
 ## Use the app
 
-1. Install a root manager APK from [KernelSU](https://github.com/tiann/KernelSU), [BakaSU/ReSukiSU](https://github.com/Baka-SU/BakaSU), or [KowSU](https://github.com/KOWX712/KernelSU).
+1. Install a root manager APK from [KernelSU](https://github.com/tiann/KernelSU), [KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next), [BakaSU/ReSukiSU](https://github.com/Baka-SU/BakaSU), or [KowSU](https://github.com/KOWX712/KernelSU).
 2. Install the GhostLock APK and open it.
 3. Check that your kernel is supported, then tap **Run**.
 
@@ -14,7 +14,9 @@ Support requires an exact `uname -r` match. Check the [supported devices](docs/k
 
 If Shizuku is enabled, start it with ADB before running GhostLock. Tap GhostLock's status card to grant access.
 
-Any root manager that ships `libksud.so` provides `ksud` for module loading. The built-in list (KernelSU, ReSukiSU, BakaSU, KowSU) is auto-detected, and other managers can be picked in **Settings → Root manager**. Without `ksud`, W1/W2 still grant uid 0 but no module is loaded.
+Any root manager that ships `libksud.so` provides `ksud` for module loading. The built-in list (KernelSU, KernelSU-Next, ReSukiSU, BakaSU, KowSU) is auto-detected, and other managers can be picked in **Settings → Root manager**. Without `ksud`, W1/W2 still grant uid 0 but no module is loaded.
+
+**KernelSU-Next manager recognition does not install its kernel driver.** KernelSU-Next requires its driver built into kernels 4.19–5.4; app-side manager detection alone cannot make an unsupported kernel compatible. Verify the device/kernel requirements in the [KernelSU-Next installation guide](https://kernelsu-next.github.io/webpage/pages/installation.html).
 
 ## Add a kernel profile
 
