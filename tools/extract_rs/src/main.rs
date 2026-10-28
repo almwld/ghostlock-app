@@ -186,8 +186,11 @@ fn resolve_kallsyms(
             }
         }
     }
-    kallsyms_finder::recover(&boot.kernel, btf_at)
-        .map_err(|err| ExtractError::kallsyms(err.to_string()))
+    kallsyms_finder::recover(&boot.kernel, btf_at).map_err(|err| {
+        ExtractError::kallsyms(format!(
+            "{err}. Embedded kallsyms recovery did not validate this kernel image;              if you have a matching System.map or kallsyms text dump, retry with              --kallsyms <path>. The symbol file must belong to this exact kernel build."
+        ))
+    })
 }
 
 fn run(cli: &Cli) -> Result<i32> {
