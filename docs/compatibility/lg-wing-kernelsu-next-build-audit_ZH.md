@@ -55,12 +55,12 @@ DTB 检查工具在 1,212,782 字节的提取组件中识别到 605,249 字节�
 
 打包的 `kernel.config` 中包含 `CONFIG_KSU=y`、`CONFIG_KPROBES=y`、`CONFIG_MODULES=y` 和 `CONFIG_KSU_SYSCALL_TABLE_HOOK=y`。内核映像中也找到了 `kernelsu.allow_shell`、`kernelsu.norc`、`Tksu_avc` 等字符串。这些是辅助证据，但配置值和字符串本身不能证明运行时功能已启用、管理器集成正确或 root 行为成功。
 
-## 更新的 CI 运行
+## 更新的 CI 运行与验证变更
 
-- [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191)
-- 提交：`8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`
-- 本次审计时任务仍为 `in_progress`；“Build kernel and device trees”仍在运行，验证与产物上传尚未开始。
-- 在 GitHub 给出最终结论并检查产物内容之前，不应把 Run #16 视为已完成构建。
+- [Run #16](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40617303191)，提交 `8ef0c4fffb3dc65a47f4cf9ea582b02aa6933027`：最近一次检查时仍为 `in_progress`；内核/设备树构建步骤仍在运行，验证与产物上传尚未开始。
+- [Run #17](https://github.com/almwld/android_kernel_lge_sm7250/actions/runs/40621283683)，提交 `55e037666dea3d96af3360fd0c8ec1e8153459d6`：很快以 `failure` 结束，GitHub jobs 接口未返回任何 job。现有元数据无法确定原因；没有运行日志时，不应将其直接认定为编译失败。
+- 提交 `55e037666dea3d96af3360fd0c8ec1e8153459d6` 更新了 workflow：若收集到的 DTB/DTBO 数量为零，则验证失败；同时为所有已收集产物生成校验和，而不再只校验 `Image.gz`。此检查旨在避免把只有内核映像的输出误报为完整设备构建。
+- 最近一次检查时，Run #16 尚无产物列表；Run #17 也没有返回 job/产物信息。因此目前两个运行都不能作为已验证的完整设备构建。
 
 ## 结论与后续要求
 
